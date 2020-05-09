@@ -41,7 +41,6 @@ class block( pygame.sprite.Sprite ):
     def set_rect( self , x , y ):
         self.rect.x = x
         self.rect.y = y
-        
     def draw ( self , screen ):
         screen.blit( self.image , self.rect )
 
@@ -84,6 +83,8 @@ class ball( pygame.sprite.Sprite ):
         #self.image.fill( self.color )
         self.image.set_colorkey( WHITE )
         self.rect = self.image.get_rect()
+        self.dx = random.randint( -10 , 10 )
+        self.dy = random.randint( -10 , 10 )
         
         
     def getRect( self ):
@@ -92,6 +93,14 @@ class ball( pygame.sprite.Sprite ):
     def set_rect( self , x , y ):
         self.rect.x = x
         self.rect.y = y
+    
+    def update( self , screen ):        
+        if ( ( self.rect.x <= 0 ) or ( self.rect.x >= screen.get_width() ) ):
+            self.dx = self.dx * -1
+        if ( ( self.rect.y <= 0 ) or ( self.rect.y >= screen.get_height() ) ):
+            self.dy = self.dy * -1
+        self.rect.x = self.rect.x + self.dx
+        self.rect.y = self.rect.y + self.dy
         
     def draw ( self , screen ):
         screen.blit( self.image , self.rect )
@@ -111,9 +120,8 @@ clock = pygame.time.Clock()
 blockList = pygame.sprite.Group()
 player = player( 200 , 70 , "圖片1.png" )
 ball = ball( 50 , 50 , "59355e3479426.png" )
+ball.set_rect( 200 , 200 )
 
-ballXV = random.randrange( 1 , 5 )
-ballYV = random.randrange( 1 , 5 )
 
 
 for i in range( 8 ):
@@ -122,18 +130,29 @@ for i in range( 8 ):
         target.set_rect( 11 * ( i + 1 ) + 100 * i , 70 * a + 10 )
         blockList.add( target )
     
-    
-
+font = pygame.font.Font("crayon_1-1.ttf" , 200 )    
+score = 0
 running = True
+
 
 while running:
     screen.fill( WHITE )
+    text = font.render( str( score ) , True , ORANGE )
+
     for event in pygame.event.get():
         if event.type == pygame.MOUSEMOTION:
             ( x , y ) = pygame.mouse.get_pos()
             
         if event.type == pygame.QUIT:
             running = False
+        
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_s:   
+                ball.dx = ball.dx * random.randrange( 1 , 10 ) / 10
+                ball.dy = ball.dy * random.randrange( 1 , 10 ) / 10
+            if event.key == pygame.K_w:   
+                ball.dx = ball.dx * random.randrange( 1 , 5 )
+                ball.dy = ball.dy * random.randrange( 1 , 5 )
     blockList.draw( screen )
     player.draw( screen )
     if x > 740:
@@ -142,9 +161,20 @@ while running:
         x = 40
     player.set_rect( x - 40 , 650 )
     ball.draw( screen )
-    ball.set_rect( ball.rect.x + ballXV , ball.rect.y + ballYV )
+    ball.update( screen )
+    
+    if pygame.sprite.collide_rect( ball , player ):
+        ball.dx = ball.dx * -1
+        ball.dy = ball.dy * -1
 
+    blocks_hit_list = pygame.sprite.spritecollide( ball , blockList, True )
+    
+    for block in blocks_hit_list:
+        score = score + 1
         
+    print( score )
+    
+    screen.blit( text , ( 500 , 500 ) )
     clock.tick(90)
     pygame.display.flip()
 pygame.quit()
